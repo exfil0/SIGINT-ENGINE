@@ -1,4 +1,4 @@
-# [GSM/LTE/5G/6G] FalconOne IMSI/TMSI and SMS Catcher Blueprint V9 (Ubuntu-Adapted with Multi-Generation Support, O-RAN/NTN Extensions, Enhanced Exploits, BladeRF Accommodation, OsmocomBB for GSM, pySim SIM Programming, and YateBTS for GSM Active Monitoring)
+# [GSM/LTE/5G/6G] FalconOne IMSI/TMSI and SMS Catcher Blueprint V9 (Ubuntu-Adapted with Multi-Generation Support, O-RAN/NTN Extensions, Enhanced Exploits, BladeRF Accommodation, OsmocomBB for GSM, and pySim SIM Programming)
 
 **Research & Development Team**  
 **Version Status: 9.0 TOP CONFIDENTIAL**  
@@ -86,7 +86,7 @@ The FalconOne IMSI/TMSI and SMS Catcher is a scalable, open-source-based system 
     - NTN Extensions Details (Non-Terrestrial Networks for 5G/6G)
     - NTN Test Procedures
 12. Testing and Verification Procedures
-13. Sustainability Enhancements (Updated in V8)
+13. Sustainability Enhancements (Updated in V9)
 **Appendix A: BladeRF Setup Troubleshooting**  
 **Appendix B: pySim SIM Programming**
 
@@ -96,7 +96,7 @@ This system is intended for authorized law enforcement, security professionals, 
 **Key Capabilities**:
 - Passive sniffing for unencrypted signaling (IMSI/TMSI/GUTI capture, SMS interception).
 - Active testbeds for KPIs, throughput, and exploits (e.g., fake base stations, DoS).
-- 6G extensions for ISAC (integrated sensing and communications), NTN (satellites/LEO), AI-driven optimization, sub-THz/mmWave, O-RAN RIC, and more.
+- 6G extensions for ISAC (integrated sensing and communications), NTN (satellites/LEO), AI-driven optimization, sub-THz/mmWave (with external front-ends), O-RAN RIC, and more.
 - Exploits for research (e.g., modem crashing, downgrades, fingerprinting—ethical use only).
 **Note**: This is primarily a passive/active monitoring tool with research extensions. Active modes, injections, and exploits require legal authorization and hardware. Test in controlled environments (e.g., Faraday cage) to avoid interference or legal issues. Encrypted user data cannot be decrypted without keys. All exploits are for educational/research purposes only, with CVD (Coordinated Vulnerability Disclosure) recommended. **BladeRF Accommodation**: BladeRF is supported as an alternative SDR for most tools (e.g., via libbladeRF/SoapySDR in GNU Radio/srsRAN/OAI), but may require manual tweaks for stability in 5G/6G (e.g., flaky attaches in srsRAN; see Stage 5 for details). Use `device_name = bladerf` in configs instead of `uhd`.
 ## 2. Blueprint Overview
@@ -108,7 +108,7 @@ This blueprint outlines a scalable, multi-generation catcher system. It starts w
 - LAN cable (for isolated network)
 - Power adapter or portable battery bank
 - For GSM: NESDR Smart by Nooelec kit (including antennas) or HackRF One Kit (for 900-1800MHz GSM bands)
-- For LTE/5G/6G: USRP B210 (for basic downlink/uplink, USB 3.0, dual-channel MIMO, up to 56MHz bandwidth) or USRP X310/X410 (for advanced dual-LO uplink, 10/40GbE, up to 160MHz bandwidth, 4x4 MIMO; recommended for NSA/SA/6G sub-THz/NTN) or BladeRF xA4/2.0 micro (alternative for cost-saving, up to 61.44MHz bandwidth, but with stability caveats in advanced modes; ~$420 USD)
+- For LTE/5G/6G: USRP B210 (for basic downlink/uplink, USB 3.0, dual-channel MIMO, up to 56MHz bandwidth) or USRP X310/X410 (for advanced dual-LO uplink, 10/40GbE, up to 400MHz per channel bandwidth, 4x4 MIMO; recommended for NSA/SA/6G NTN and low-GHz testing) or BladeRF xA4/2.0 micro (alternative for cost-saving, 61.44 MS/s sampling rate, ~56 MHz instantaneous bandwidth, but with stability caveats in advanced modes; ~$420 USD)
 - GPSDO (e.g., OctoClock-G or Leo Bodnar) for clock synchronization in multi-USRP/NTN setups (10MHz ref + 1PPS)
 - Test SIMs (e.g., SysmoISIM-SJA2 programmable SIM) and COTS UEs (e.g., OnePlus Nord CE 2, Samsung Galaxy S22, Google Pixel 7, Huawei P40 Pro, Quectel RM520N modem for 5G/6G testing)
 - For pySim SIM Programming: PC/SC reader (e.g., ACS ACR122U or Omnikey 3121) for SIM card interface
@@ -128,6 +128,7 @@ This blueprint outlines a scalable, multi-generation catcher system. It starts w
 - QSFP28-to-4xSFP28 breakout cable (e.g., NVIDIA MCP7F00-A003R26N) for USRP X410
 - Protective enclosure (3D-printed or rugged case for field deployment)
 - Spectrum analyzer (e.g., Siglent SSA3021X) for RF verification
+- External sub-THz/mmWave front-ends (e.g., custom RF modules from Keysight or Rohde & Schwarz) for 6G FR4 testing (100-300GHz; not natively supported by listed SDRs)
 ## 3. Core Infrastructure Setup (Stage 1)
 ### Network Setup and Initial Configurations
 Router Configuration:
@@ -136,7 +137,7 @@ Router Configuration:
 3. If using a managed switch, disable DHCP to avoid conflicts.
 4. Ensure internet connectivity for all devices (test with `ping 8.8.8.8`).
 5. Verify assigned IP addresses using `ipconfig` (Windows) or `ip addr` (Ubuntu).
-Verification: From management PC, ping router IP (192.168.31.1) and external (8.8.8.8). If fails, check cables/DHCP settings. For multi-gen isolation, create VLANs (e.g., GSM on VLAN 10, 5G on VLAN 50); verify with `vlanconfig`.
+Verification: From management PC, ping router IP (192.168.31.1) and external (8.8.8.8). If fails, check cables/DHCP settings. For multi-gen isolation, create VLANs (e.g., GSM on VLAN 10, 5G on VLAN 50); verify with `ip link show` or `nmcli con show`.
 ### Installing Ubuntu OS
 1. Download the latest Ubuntu 24.04 LTS ISO from ubuntu.com (verify SHA256 checksum for integrity: `sha256sum ubuntu-24.04-desktop-amd64.iso`).
 2. Create a bootable USB drive using tools like Rufus (Windows) or `dd` (Linux: `sudo dd if=ubuntu-24.04-desktop-amd64.iso of=/dev/sdX bs=4M status=progress && sync`, replace `/dev/sdX` with USB device—verify with `lsblk`).
@@ -238,10 +239,14 @@ Make executable (`chmod +x ~/scan_gsm.sh`), add to cron (`crontab -e`: `0 0 * * 
 OsmocomBB is an open-source GSM baseband for old phones (e.g., Motorola C123) or SDR, enabling low-level GSM sniffing.
 ```
 sudo apt update -y
-sudo apt install -y git build-essential libusb-1.0-0-dev libosmocore-dev libosmo-netif-dev libosmo-fl2k-dev libosmocoding-dev libosmocore libosmocodec libosmocoding libosmocrypto libosmocore-utils libosmocore-tools libosmocore-bin
+sudo apt install -y git build-essential libusb-1.0-0-dev autoconf automake libtool pkg-config libtalloc-dev libpcsclite-dev libgmp-dev libortp-dev libdbi-dev libdbd-sqlite3 libsqlite3-dev libpcap-dev libgnutls28-dev libmnl-dev libnewt-dev libusb-dev liblua5.2-dev libopencore-amrnb-dev libopencore-amrwb-dev libspeex-dev libasound2-dev libudev-dev libdbus-1-dev libncurses5-dev libreadline-dev libsctp-dev libssl-dev libfftw3-dev swig python3-setuptools python3-mako python3-requests
 git clone https://gitea.osmocom.org/phone-side/osmocom-bb.git
-cd osmocom-bb/src
+cd osmocom-bb
+./bootstrap
+./configure
 make -j$(nproc)
+sudo make install
+sudo ldconfig
 ```
 For SDR mode (e.g., with fl2k): `sudo apt install libosmo-fl2k-dev`; build with `--enable-fl2k`.
 Verification: `./host/osmocon/osmocon -p /dev/ttyUSB0` (for phone; expect baseband load). For SDR: Run `gsm_receive_rtl` (if adapted); check bursts. Test: Capture GSM downlink; verify IMSI in output. If "No device found", check phone/SDR connection/firmware. **BladeRF Adaptation**: OsmocomBB can use BladeRF via libbladeRF; test with `gsm_receive_bladerf`.
@@ -296,9 +301,9 @@ tshark -i lo -f "udp port 4729" -Y "(e212.imsi or gsm_sms.sms_text)" \
 ```
 For 5G:
 ```
-tshark -i lo -f "udp port 38412" -Y "ngap or nr-rrc" -T fields -e frame.number -e ngap.IMSI -e nr-rrc.tmsi -e nr-rrc.sms_text -E header=y -E separator=, -E quote=d > 5g_capture_log.csv
+tshark -i lo -f "host 127.0.0.1 and sctp port 38412" -Y "ngap or nr-rrc" -T fields -e frame.number -e nas-5gs.mm.imsi -e nr-rrc.tmsi -e nas-5gs.sms_text -E header=y -E separator=, -E quote=d > 5g_capture_log.csv
 ```
-Verification: Run with `grgsm_livemon` or srsRAN testbed; `head capture_log.csv` (expect headers/IMSI/SMS). Test: Simulate SMS from test UE; grep capture for IMSI (expect match). If empty, verify loopback (`ip link show lo up`) and traffic.
+Verification: Run with `grgsm_livemon` or srsRAN testbed; `head capture_log.csv` (expect headers/IMSI/SMS). Test: Simulate SMS from test UE; grep capture for IMSI (expect match). If empty, verify loopback (`ip link show lo up`) and traffic. **Note**: TShark fields like nas-5gs.mm.imsi are placeholders; adapt per Wireshark version (e.g., use `nas-5gs.imsi` or custom dissectors if needed; test on your Wireshark build).
 ## 8. Ubuntu and LTE Monitoring Readiness (Stage 4)
 ### Installing LTESniffer (with srsRAN Integration)
 Reuse UHD.
@@ -310,8 +315,8 @@ cmake ../ && make -j$(nproc)
 Verification: `./src/LTESniffer -h` (usage); build log no errors. **BladeRF Adaptation**: Use `device_name = bladerf`; verification: Run with BladeRF connected; check for decoding.
 ### Configuring and Running LTE Monitoring (Passive Sniffing)
 1. Identify frequencies: `gqrx` scan. Verification: Note peaks.
-2. Downlink: `sudo ./src/LTESniffer -A 2 -W 4 -f 1840e6 -C -m 0 -a "num_recv_frames=512"`. Verification: >95% PDCCH; Wireshark pcap.
-3. Uplink: `sudo ./src/LTESniffer -A 2 -W 4 -f 1840e6 -u 1745e6 -C -m 1`. Verification: 70-90% PUSCH.
+2. Downlink: `sudo ./src/LTESniffer -A 2 -W 4 -f 1840e6 -C -m 0 -a "num_recv_frames=512"`. Verification: PDCCH decoding; Wireshark pcap.
+3. Uplink: `sudo ./src/LTESniffer -A 2 -W 4 -f 1840e6 -u 1745e6 -C -m 1`. Verification: PUSCH decoding.
 4. Security API: `sudo ./src/LTESniffer -A 2 -W 4 -f 1840e6 -u 1745e6 -C -m 1 -z 3`. Verification: api_pcap mappings.
 5. Direct: `sudo ./src/LTESniffer -A 2 -W 4 -f 1840e6 -u 1745e6 -I 379 -p 100 -m 1`. Verification: Fast startup.
 Test: UE traffic; verify accuracy.
@@ -355,13 +360,13 @@ Add subscribers: `./install/bin/open5gs-dbctl add 001010123456789 465B5CE8B199B4
 5. UE: `sudo srsue -c ue.yaml`. Verification: Connected.
 Test: iPerf3 (>30Mbps).
 ### Monitoring KPIs and Signals
-Logs for bitrate/CQI. Capture: `tshark -i lo -Y "ngap or nr-rrc" -w 5g.pcap`. Verification: Wireshark NGAP.
+Logs for bitrate/CQI. Capture: `tshark -i lo -f "host 127.0.0.1 and sctp port 38412" -Y "ngap or nr-rrc" -w 5g.pcap`. Verification: Wireshark NGAP.
 ### srsRAN Exploits and Advanced Capabilities
-srsRAN enables FBS exploits:
-- FBS Attacks: Spoof gNB for IMSI catching (>90%), SMS spam, MSA (chain DoS/tracking). Example: Modify PLMN to attract UEs; verify UE connect.
-- DoS: Spoof DCI for jamming (>95% drop), link failure (79% battery drain), RA flooding (endless RAs). Example: Fake UL grants; verify UE disconnect.
-- Vulnerabilities: 97 CVEs (MME/AMF crashes via single packet). Example: Fuzz NAS; verify core disruption.
-- Other: Downgrades (5G->2G), fingerprinting (<20m localization), O-RAN antenna access for breaches. Example: CSI leakage for tracking; verify accuracy. **Ethical use only.**
+srsRAN enables FBS exploits (reported in lab tests across stacks from RANsacked study):
+- FBS Attacks: Spoof gNB for IMSI catching (reported >90%), SMS spam, MSA (chain DoS/tracking). Example: Modify PLMN to attract UEs; verify UE connect.
+- DoS: Spoof DCI for jamming (reported >95% drop), link failure (79% battery drain), RA flooding (endless RAs). Example: Fake UL grants; verify UE disconnect.
+- Vulnerabilities: Fuzzing reveals crashes (e.g., from RANsacked study across stacks). Example: Fuzz NAS; verify disruption.
+- Other: Downgrades (5G->2G), fingerprinting (reported localization), O-RAN antenna access for breaches. Example: CSI leakage for tracking; verify accuracy. **Ethical use only; CVD recommended.**
 ## 10. Ubuntu and 5G Passive Sniffing Readiness (Stage 6)
 ### Installing Sni5Gect (5G NR Sniffing and Exploitation Framework)
 Reuse UHD.
@@ -373,20 +378,20 @@ cmake ../ && make -j$(nproc)
 Verification: `sudo ./sni5gect -h` (usage). **BladeRF**: Use `driver=bladerf`; test for decoding.
 ### Configuring and Running 5G Passive Sniffing
 1. Identify frequencies: GQRX scan (DL 3600MHz n78). Verification: SSB bursts.
-2. Downlink: `sudo ./sni5gect -A 2 -W 4 -f 3600e6 -C -m 0`. Verification: MIB/SIB1 (>95% DL).
-3. Uplink: `sudo ./sni5gect -A 2 -W 4 -f 3600e6 -u 3500e6 -C -m 1`. Verification: PUSCH (70-90%).
-4. Security API: `sudo ./sni5gect -A 2 -W 4 -f 3600e6 -u 3500e6 -C -m 1 -z 3`. Verification: api_pcap mappings (>80%).
+2. Downlink: `sudo ./sni5gect -A 2 -W 4 -f 3600e6 -C -m 0`. Verification: MIB/SIB1 (DL decoding).
+3. Uplink: `sudo ./sni5gect -A 2 -W 4 -f 3600e6 -u 3500e6 -C -m 1`. Verification: PUSCH decoding.
+4. Security API: `sudo ./sni5gect -A 2 -W 4 -f 3600e6 -u 3500e6 -C -m 1 -z 3`. Verification: api_pcap mappings.
 Test: UE traffic; verify accuracy/SNR >20dB.
 ### Sni5Gect Attacks and Exploits
-- Modem Crashing (DoS): Malformed RAR/Msg4; >80% success on Samsung/Huawei. Example: Inject during RACH; verify reboot.
-- Network Downgrade: Alter RRC; >90% success to 4G/2G. Example: Fake signal reports; verify handover.
-- Device Fingerprinting: Decode capabilities; 95% accuracy (e.g., Pixel vs. OnePlus). Example: Analyze protocol versions; verify model.
-- Authentication Bypass: Map GUTI->IMSI; >80% success. Example: Stateful tracking; verify correlations.
+- Modem Crashing (DoS): Malformed RAR/Msg4; reported success on Samsung/Huawei. Example: Inject during RACH; verify reboot.
+- Network Downgrade: Alter RRC; reported success to 4G/2G. Example: Fake signal reports; verify handover.
+- Device Fingerprinting: Decode capabilities; reported accuracy (e.g., Pixel vs. OnePlus). Example: Analyze protocol versions; verify model.
+- Authentication Bypass: Map GUTI->IMSI; reported success. Example: Stateful tracking; verify correlations.
 - Other: Uplink injection (buffer overflows), post-RAR DoS. Example: Fake scheduling; verify crashes. **Warning**: Research only; CVD to GSMA.
 ## 11. Ubuntu and 6G Research Extensions Readiness (Stage 7)
 ### Detailed OAI 6G Research Extensions
-OAI extensions for 6G (develop branch):
-- FR4 Sub-THz: Custom PHY for 100-300GHz; high-rate/sensing with USRP.
+OAI extensions for 6G (develop branch; research roadmap - requires additional hardware not listed for full FR4 sub-THz):
+- FR4 Sub-THz: Custom PHY for 100-300GHz (with external front-ends); high-rate/sensing with USRP.
 - Multi-Band RF: FR1/FR2/FR3 with JCAS (radar+comm).
 - AI/ML for RRM: TensorFlow for beamforming/handover.
 - Waveforms: OTFS/semantic comms in PHY/MAC.
@@ -413,20 +418,20 @@ OAI NTN (openairinterface5g-nr-ntn branch): Doppler compensation, handover for L
   5. Advanced: Integrate AI for prediction; test in loop (100 iterations; success >90%). For 6G: Add JCAS for aerial sensing.
 ## 12. Testing and Verification Procedures
 - **System-Wide Test**: Reboot; run GSM capture + LTE sniff + 5G testbed + 6G prototype. Verification: No crashes; logs clean.
-- **GSM Test**: `grgsm_livemon + tshark`; send SMS; verify csv has IMSI/SMS (>90% capture).
-- **LTE Test**: LTESniffer; UE traffic; verify pcap (>80% accuracy). NSA iPerf: >8Mbps NR.
+- **GSM Test**: `grgsm_livemon + tshark`; send SMS; verify csv has IMSI/SMS (reported >90% capture in lab tests).
+- **LTE Test**: LTESniffer; UE traffic; verify pcap (reported >80% accuracy in lab tests). NSA iPerf: >8Mbps NR.
 - **5G Test**: srsRAN + Open5GS; UE attach; iPerf >30Mbps; pcap NGAP. Sni5Gect: Verify sniffing. Exploits: Isolated test; verify DoS/downgrade (ethical).
 - **6G Test**: OAI; simulate JCAS/NTN; verify waveforms/handover. O-RAN RIC: E2 connect; AI optimization >95%.
 - **Performance Test**: `iotop` (CPU <80%); 24h stability run.
 - **Security Test**: Attempt exploits; verify mitigation (e.g., integrity protection).
-## 13. Sustainability Enhancements (Updated in V8)
+## 13. Sustainability Enhancements (Updated in V9)
 - **OS/Dependency**: Ubuntu 24.04 LTS (5-year). Automate: `unattended-upgrades`; Docker for isolation (`docker run --privileged --net=host`).
 - **Error/Monitoring**: Scripts for SDR/core; logrotate; smtplib alerts. Cron for scans/updates.
 - **Performance**: Multi-core (`-W 4+`); GPU for AI (TensorFlow in OAI).
 - **GUI Path**: PyQt6 tabs for multi-gen capture/charts/alerts.
 - **Backup/Redundancy**: `rsync` backups; ARM fallback.
 - **Compliance**: Timestamp/warrant logs; annual updates. Ethical guidelines for exploits/6G.
-This V8 blueprint is 100% ready, thorough, and impressive for multi-gen ops. For implementation, proceed.
+This blueprint is a thorough research blueprint for lab use. For implementation, proceed.
 GitHub: https://github.com/exfil0/SIGINTPI/tree/main
 
 ## Appendix A: BladeRF Setup Troubleshooting
@@ -440,17 +445,17 @@ GitHub: https://github.com/exfil0/SIGINTPI/tree/main
 ## Appendix B: pySim SIM Programming
 pySim is a Python tool for programming SIM cards, essential for configuring test SIMs with custom IMSI/Ki/OPC for UE testing.
 ### Installing pySim
-In venv:
 ```
-pip install pysim pcsc-lite pcsc-tools pyscard
+sudo apt update -y && sudo apt install -y pcscd pcsc-tools libccid
+pip install pysim pyscard
 ```
 Verification: `pySim-shell -h` (usage).
 ### Configuring and Programming SIM
 1. Connect PC/SC reader: `pcsc_scan` (expect reader detection).
-2. Program SIM: `pySim-program -p 0 --imsi=001010123456789 --ki=465B5CE8B199B49FAA5F0A2EE238A6BC --opc=E8ED289DEBA952E4283B54E88E6183CA --mcc=001 --mnc=01 --sms-center=+1234567890`.
-3. Read/Verify: `pySim-read -p 0`. Verification: Expect updated IMSI/Ki/OPC.
+2. Program SIM: `pySim-prog.py -p 0 --imsi=001010123456789 --ki=465B5CE8B199B49FAA5F0A2EE238A6BC --opc=E8ED289DEBA952E4283B54E88E6183CA --mcc=001 --mnc=01 --sms-center=+1234567890`.
+3. Read/Verify: `pySim-read.py -p 0`. Verification: Expect updated IMSI/Ki/OPC.
 Test: Insert in UE; verify attach to test network (e.g., srsRAN gNB). If "No SIM", check reader connection or card type (e.g., USIM for 5G).
 Troubleshooting: If "No card found", verify pcscd service (`sudo systemctl start pcscd`); for errors, use `--debug`. **Note**: Use test SIMs only; programming real SIMs may brick them. 
 
-This V9 blueprint is 100% ready, thorough, and impressive for multi-gen ops. For implementation, proceed.
+This V9 blueprint is a thorough research blueprint for lab use. For implementation, proceed.
 GitHub: https://github.com/exfil0/SIGINTPI/tree/main
