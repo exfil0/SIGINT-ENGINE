@@ -1,10 +1,10 @@
-# [GSM/LTE/5G/6G] FalconOne IMSI/TMSI and SMS Catcher Blueprint V9 (Ubuntu-Adapted with Multi-Generation Support, O-RAN/NTN Extensions, Enhanced Exploits, BladeRF Accommodation, OsmocomBB for GSM, and pySim SIM Programming)
+# [GSM/LTE/5G/6G] FalconOne IMSI/TMSI and SMS Catcher Blueprint V11 (Ubuntu-Adapted with Multi-Generation Support, O-RAN/NTN Extensions, Enhanced Exploits, BladeRF Accommodation, OsmocomBB for GSM, pySim SIM Programming, and Enhanced OpenBTS Integration)
 **Research & Development Team**
-**Version Status: 9.0 TOP CONFIDENTIAL**
+**Version Status: 11.0 TOP CONFIDENTIAL**
 **Adapted for Ubuntu 24.04 LTS (Noble Numbat) as of December 01, 2025**
 ![Blueprint Image][image1]
 ## Executive Summary
-The FalconOne IMSI/TMSI and SMS Catcher is a scalable, open-source-based system for multi-generation cellular monitoring, designed as a temporary bridge for SAPS mobile units awaiting professional devices from Stratign. It enables passive and active analysis across GSM, LTE, 5G, and 6G prototypes, with low-cost hardware options like BladeRF for flexibility. Key benefits include real-time IMSI/TMSI/GUTI capture, SMS interception, KPI monitoring, and research extensions for NTN, O-RAN, and AI-driven optimizations. Estimated setup cost: R10,000-R50,000 depending on SDR choice. Risks include legal compliance (RICA/ICASA mandates warrants) and technical stability (e.g., BladeRF limitations in 5G). This V9 incorporates enhanced details, automation, security, and troubleshooting for every step, making it research-ready for controlled lab environments. New in V9: Integration of YateBTS for GSM active BTS monitoring, complementing OsmocomBB and pySim for full GSM capabilities.
+The FalconOne IMSI/TMSI and SMS Catcher is a scalable, open-source-based system for multi-generation cellular monitoring, designed as a temporary bridge for SAPS mobile units awaiting professional devices from Stratign. It enables passive and active analysis across GSM, LTE, 5G, and 6G prototypes, with low-cost hardware options like BladeRF for flexibility. Key benefits include real-time IMSI/TMSI/GUTI capture, SMS interception, KPI monitoring, and research extensions for NTN, O-RAN, and AI-driven optimizations. Estimated setup cost: R10,000-R50,000 depending on SDR choice. Risks include legal compliance (RICA/ICASA mandates warrants) and technical stability (e.g., BladeRF limitations in 5G). This V11 incorporates enhanced details, automation, security, and troubleshooting for every step, making it research-ready for controlled lab environments. New in V11: Enhanced OpenBTS troubleshooting, including dependency handling, common error resolutions, and BladeRF adaptations.
 ## Version History
 | Version | Date | Key Changes |
 |---------|---------------|-------------|
@@ -17,6 +17,8 @@ The FalconOne IMSI/TMSI and SMS Catcher is a scalable, open-source-based system 
 | V7 | Dec 01, 2025 | BladeRF full accommodation, executive summary, glossary, automation scripts, kernel optimizations, additional tools/tests, CI/CD, monitoring dashboard |
 | V8 | Dec 01, 2025 | OsmocomBB for GSM baseband, pySim for SIM programming, enhanced test procedures |
 | V9 | Dec 01, 2025 | YateBTS for GSM active BTS monitoring, full integration with pySim/OsmocomBB, updated tests/exploits |
+| V10 | Dec 01, 2025 | OpenBTS integration as alternative for GSM active BTS monitoring |
+| V11 | Dec 01, 2025 | Enhanced OpenBTS troubleshooting, dependency handling, and BladeRF adaptations |
 ## Glossary and Acronyms
 - **IMSI**: International Mobile Subscriber Identity - Unique UE identifier.
 - **TMSI**: Temporary Mobile Subscriber Identity - Session pseudonym.
@@ -32,6 +34,7 @@ The FalconOne IMSI/TMSI and SMS Catcher is a scalable, open-source-based system 
 - **OsmocomBB**: Open-source GSM baseband for mobile phones/SDR GSM monitoring.
 - **pySim**: Python tool for programming SIM cards (IMSI/Ki/OPC).
 - **YateBTS**: Open-source GSM BTS implementation for active network creation.
+- **OpenBTS**: Open-source GSM base station software for active network creation.
 ## Table of Contents
 1. Introduction
 2. Blueprint Overview
@@ -54,6 +57,7 @@ The FalconOne IMSI/TMSI and SMS Catcher is a scalable, open-source-based system 
    - Installing Kalibrate-RTL (for GSM Frequency Scanning)
    - Installing OsmocomBB (for GSM Baseband Monitoring)
    - Installing YateBTS (for GSM Active Monitoring - New in V9)
+   - Installing OpenBTS (for GSM Active Monitoring - Alternative in V10)
 7. Ubuntu and Software Readiness (Stage 3)
    - TShark Installation and Configuration (for GSM/LTE/5G Data Parsing)
    - Setting Up Permissions for Non-Root Capture
@@ -81,12 +85,12 @@ The FalconOne IMSI/TMSI and SMS Catcher is a scalable, open-source-based system 
     - NTN Extensions Details (Non-Terrestrial Networks for 5G/6G)
     - NTN Test Procedures
 12. Testing and Verification Procedures
-13. Sustainability Enhancements (Updated in V9)
+13. Sustainability Enhancements
 **Appendix A: BladeRF Setup Troubleshooting**
 **Appendix B: pySim SIM Programming**
 ## 1. Introduction
-The FalconOne IMSI/TMSI and SMS Catcher blueprint provides a comprehensive, structured approach to deploying a multi-generation cellular monitoring system using Ubuntu 24.04 LTS (or compatible versions). It supports passive and active monitoring across GSM (2G), LTE (4G), 5G NR, and emerging 6G extensions, using hardware like HackRF One or NESDR Smart for GSM, USRP B210/X310/X410 or BladeRF xA4/2.0 micro (with adaptations) for LTE/5G/6G, and software like LTESniffer (LTE passive), Sni5Gect (5G passive), srsRAN (4G/5G active testbeds), Open5GS (core network), and OpenAirInterface (OAI for 6G prototyping). This V9 update is a complete recreation from scratch, incorporating all prior enhancements, including detailed verifications, tests, NTN (Non-Terrestrial Networks) test procedures, O-RAN RIC (RAN Intelligent Controller) setup, additional exploit examples (e.g., for srsRAN and Sni5Gect), and research capabilities as of December 01, 2025. New in V9: Integration of YateBTS for GSM active BTS monitoring, complementing OsmocomBB and pySim for full GSM capabilities.
-This system is intended for authorized law enforcement, security professionals, and researchers conducting cellular traffic analysis under strict legal compliance (e.g., RICA/ICASA regulations in South Africa, POPIA for data privacy). The guide includes precise installation steps, permission settings, verification commands, test procedures, and optimized tools for seamless data collection, monitoring, and exploitation demonstrations. For sustainability, we've incorporated 2025 best practices: stable repositories (e.g., GNU Radio PPA, UHD v4.9.0.1, srsRAN release_25_10, LTESniffer v2.1.0, Sni5Gect (no tagged release; use main branch), OAI develop branch/integration_2025_w33, Open5GS v2.7.6), automated updates, modular design for GUI extensions (e.g., PyQt6-based interface for real-time visualization), and compatibility with GSM, LTE, 5G SA/NSA, and 6G prototypes.
+The FalconOne IMSI/TMSI and SMS Catcher blueprint provides a comprehensive, structured approach to deploying a multi-generation cellular monitoring system using Ubuntu 24.04 LTS (or compatible versions). It supports passive and active monitoring across GSM (2G), LTE (4G), 5G NR, and emerging 6G extensions, using hardware like HackRF One or NESDR Smart for GSM, USRP B210/X310/X410 or BladeRF xA4/2.0 micro (with adaptations) for LTE/5G/6G, and software like LTESniffer (LTE passive), Sni5Gect (5G passive), srsRAN (4G/5G active testbeds), Open5GS (core network), OpenAirInterface (OAI for 6G prototyping), and OpenBTS/YateBTS (GSM active). This V11 update is a complete recreation from scratch, incorporating all prior enhancements, including detailed verifications, tests, NTN (Non-Terrestrial Networks) test procedures, O-RAN RIC (RAN Intelligent Controller) setup, additional exploit examples (e.g., for srsRAN and Sni5Gect), and research capabilities as of December 01, 2025. New in V11: Enhanced OpenBTS troubleshooting, dependency handling, and BladeRF adaptations.
+This system is intended for authorized law enforcement, security professionals, and researchers conducting cellular traffic analysis under strict legal compliance (e.g., RICA/ICASA regulations in South Africa, POPIA for data privacy). The guide includes precise installation steps, permission settings, verification commands, test procedures, and optimized tools for seamless data collection, monitoring, and exploitation demonstrations. For sustainability, we've incorporated 2025 best practices: stable repositories (e.g., GNU Radio PPA, UHD v4.9.0.1, srsRAN release_25_10, LTESniffer v2.1.0, Sni5Gect (no tagged release; use main branch), OAI develop branch/integration_2025_w33, Open5GS v2.7.6, OpenBTS 5.1.0), automated updates, modular design for GUI extensions (e.g., PyQt6-based interface for real-time visualization), and compatibility with GSM, LTE, 5G SA/NSA, and 6G prototypes.
 **Key Capabilities**:
 - Passive sniffing for unencrypted signaling (IMSI/TMSI/GUTI capture, SMS interception).
 - Active testbeds for KPIs, throughput, and exploits (e.g., fake base stations, DoS).
@@ -271,6 +275,59 @@ Identity.MCC=001
 Identity.MNC=01
 ```
 Verification: `yate -s -vvvv` (supervisor mode; expect transceiver init). Run as daemon: `sudo yate -d`. Test: Connect UE; verify registration (telnet localhost 5038; "status").
+### Installing OpenBTS (for GSM Active Monitoring - Alternative in V10)
+OpenBTS is an open-source GSM BTS for active network creation, enabling FBS for IMSI catching (using reloaded fork for 2024-2025 compatibility with newest UHD drivers).
+```
+sudo apt update -y
+git clone https://github.com/PentHertz/OpenBTS.git
+cd OpenBTS
+git checkout 5.1.0  # For stable branch
+./preinstall.sh  # Installs dependencies and clones submodules; ignore libcoredumper compilation failures
+# If preinstall fails on dependencies, install manually:
+git clone https://github.com/RangeNetworks/liba53.git
+cd liba53 && make && sudo make install && cd ..
+./NodeManager/install_libzmq.sh  # For zeromq
+cd ..
+./autogen.sh
+./configure --with-uhd
+make -j$(nproc)
+sudo make install
+sudo ldconfig
+# Build smqueue separately if not included
+cd smqueue
+make -f Makefile.standalone
+# Set up config files and directories
+./apps/setUpFiles.sh
+```
+**BladeRF Adaptation**: OpenBTS is primarily UHD-focused (for USRP); BladeRF may require additional configuration via SoapySDR, source modifications (e.g., disable FPGA loading in transceiver code), or switching to OsmoTRX for better support—test and adapt if needed. If issues persist, use YateBTS as an alternative for BladeRF.
+Configure OpenBTS (e.g., `/etc/OpenBTS/OpenBTS.db` using sqlite3):
+```
+sudo sqlite3 /etc/OpenBTS/OpenBTS.db
+UPDATE CONFIG SET VALUE='GSM900' WHERE KEYSTRING='GSM.Radio.Band';
+UPDATE CONFIG SET VALUE='1' WHERE KEYSTRING='GSM.Radio.C0';
+UPDATE CONFIG SET VALUE='001' WHERE KEYSTRING='GSM.Identity.MCC';
+UPDATE CONFIG SET VALUE='01' WHERE KEYSTRING='GSM.Identity.MNC';
+UPDATE CONFIG SET VALUE='5' WHERE KEYSTRING='GSM.Radio.RxGain';  # Start low to avoid overload
+UPDATE CONFIG SET VALUE='35' WHERE KEYSTRING='GSM.Radio.PowerManager.MaxAttenDB';
+UPDATE CONFIG SET VALUE='35' WHERE KEYSTRING='GSM.Radio.PowerManager.MinAttenDB';
+.quit
+```
+Verification: `uhd_usrp_probe` (expect device detection, e.g., USRP B210). For databases: `sqlite3 /etc/OpenBTS/OpenBTS.db .dump` (expect config entries).
+Launch components (in separate terminals or as daemons):
+```
+sudo smqueue &
+sudo sipauthserve &
+sudo /OpenBTS/OpenBTS
+```
+Test: Connect UE; verify registration. If fails, check logs in /var/log or console for errors.
+#### Troubleshooting OpenBTS
+- **Build Failures (e.g., libcoredumper or dependencies)**: Preinstall.sh bypasses libcoredumper errors; if other deps fail (e.g., liba53, zeromq), install manually as shown above. On Ubuntu 24.04, check for C++11/17 compatibility issues—add flags like CXXFLAGS="-std=c++17" to configure if needed.
+- **Hardware Detection Issues**: Run `uhd_usrp_probe` before launch; ensure firmware/FPGA loaded (e.g., for B210: expect "Loading FPGA image..."). For BladeRF, use `bladeRF-cli -p` instead; if not detected, see Appendix A.
+- **Transceiver Shutdown (e.g., "Shutting down transceiver" or status 256)**: Check clock/sample rates (e.g., mismatch between 52MHz/64MHz on older USRP); edit config for compatible rates. For BladeRF 2.0 (xA9/xA4), verify libbladeRF version; may need OsmoTRX integration (install osmo-trx with --enable-bladerf, then link as transceiver).
+- **UE Registration Failures**: Enable open registration in config (e.g., set GSM.Identity.ShortName to test value); check noise levels/calibration with `bladeRF-cli` or `uhd_usrp_probe`. Use a Faraday cage to reduce interference.
+- **Database Errors**: If sqlite3 init fails, verify file paths (/etc/OpenBTS/*.db); recreate with example.sql files.
+- **Alternative Setup**: For persistent issues, use the pre-built Docker image: `docker pull penthertz/openbts`; run with `--privileged --net=host` for SDR access. This isolates deps and avoids Ubuntu-specific build quirks.
+- **Logs and Debugging**: Check /var/log/OpenBTS or console output; increase verbosity with debug flags in config. For BladeRF-specific: If integration fails, consider OsmoTRX as proxy (clone https://gitea.osmocom.org/cellular-infrastructure/osmo-trx, build with --enable-bladerf).
 ## 7. Ubuntu and Software Readiness (Stage 3)
 ### TShark Installation and Configuration (for GSM/LTE/5G Data Parsing)
 As of 2025, TShark v4.6+ is stable:
@@ -412,13 +469,13 @@ OAI NTN (openairinterface5g-nr-ntn branch): Doppler compensation, handover for L
   5. Advanced: Integrate AI for prediction; test in loop (100 iterations; success >90%). For 6G: Add JCAS for aerial sensing.
 ## 12. Testing and Verification Procedures
 - **System-Wide Test**: Reboot; run GSM capture + LTE sniff + 5G testbed + 6G prototype. Verification: No crashes; logs clean.
-- **GSM Test**: `grgsm_livemon + tshark`; send SMS; verify csv has IMSI/SMS (reported >90% capture in lab tests).
+- **GSM Test**: `grgsm_livemon + tshark`; send SMS; verify csv has IMSI/SMS (reported >90% capture in lab tests). For OpenBTS/YateBTS: Verify UE registration and SMS routing.
 - **LTE Test**: LTESniffer; UE traffic; verify pcap (reported >80% accuracy in lab tests). NSA iPerf: >8Mbps NR.
 - **5G Test**: srsRAN + Open5GS; UE attach; iPerf >30Mbps; pcap NGAP. Sni5Gect: Verify sniffing. Exploits: Isolated test; verify DoS/downgrade (ethical).
 - **6G Test**: OAI; simulate JCAS/NTN; verify waveforms/handover. O-RAN RIC: E2 connect; AI optimization >95%.
 - **Performance Test**: `iotop` (CPU <80%); 24h stability run.
 - **Security Test**: Attempt exploits; verify mitigation (e.g., integrity protection).
-## 13. Sustainability Enhancements (Updated in V9)
+## 13. Sustainability Enhancements
 - **OS/Dependency**: Ubuntu 24.04 LTS (5-year). Automate: `unattended-upgrades`; Docker for isolation (`docker run --privileged --net=host`).
 - **Error/Monitoring**: Scripts for SDR/core; logrotate; smtplib alerts. Cron for scans/updates.
 - **Performance**: Multi-core (`-W 4+`); GPU for AI (TensorFlow in OAI).
@@ -448,5 +505,5 @@ Verification: `pySim-shell -h` (usage).
 3. Read/Verify: `pySim-read.py -p 0`. Verification: Expect updated IMSI/Ki/OPC.
 Test: Insert in UE; verify attach to test network (e.g., srsRAN gNB). If "No SIM", check reader connection or card type (e.g., USIM for 5G).
 Troubleshooting: If "No card found", verify pcscd service (`sudo systemctl start pcscd`); for errors, use `--debug`. **Note**: Use test SIMs only; programming real SIMs may brick them.
-This V9 blueprint is a thorough research blueprint for lab use. For implementation, proceed.
+This V11 blueprint is a thorough research blueprint for lab use. For implementation, proceed.
 GitHub: https://github.com/exfil0/SIGINTPI/tree/main
